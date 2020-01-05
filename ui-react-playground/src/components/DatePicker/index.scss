@@ -2,85 +2,123 @@ $theme: #1890ff;
 
 .react-datepicker-wrapper {
     background-color: #fff;
-    box-shadow: 0 2px 8px #999;
     width: 20em;
+    position: relative;
     border-radius: 4px;
-    .datepicker-edit-input-wrapper {
-        .datepicker-edit-input {
-            border-radius: 4px;
-            height: 2em;
-            width: 100%;
-            padding: 0 1em;
-            box-sizing: border-box;
-            border: none;
-            outline: none;
-            font-size: 14px;
-        }
-    }
-    .select-header {
-        display: flex;
-        justify-content: space-around;
-        .select-header-icon {
-            color: #666;
-            opacity: 0.6;
-            transition: color 0.3s;
-            cursor: pointer;
-            font-size: 12px;
-            user-select: none;
-            &:hover {
-                opacity: 1;
-            }
-        }
-    }
-    .calendar-wrapper {
+    .react-datepicker-input {
+        border-radius: 4px;
+        height: 2em;
         width: 100%;
-        padding: 0 0.8em;
-        table-layout:fixed;
-        .calendar-cell {
-            cursor: pointer;
-            user-select: none;
-            font-size: 14px;
-            border-radius: 50%;
-            width: 2em;
-            height: 2em;
-            line-height: 2;
-            margin-left: 0.5em;
-            &.prev-date, &.next-date {
-                color: #ddd;
+        padding: 0 1em;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        outline: none;
+        font-size: 14px;
+
+        &:hover {
+            border-color: $theme;
+        }
+    }
+
+    .react-datepicker-content {
+        position: absolute;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px #999;
+        // margin-top: -1.5em;
+        background-color: #fff;
+        top: 0;
+        .datepicker-edit-input-wrapper {
+            .datepicker-edit-input {
+                border-radius: 4px;
+                height: 2em;
+                width: 100%;
+                padding: 0 1em;
+                box-sizing: border-box;
+                border: none;
+                outline: none;
+                font-size: 14px;
             }
-            &.cur-date {
-                &:not(.selected):hover {
-                    background-color: rgba($theme, 0.1);
+        }
+
+        .select-header {
+            display: flex;
+            justify-content: space-around;
+            .select-header-icon {
+                color: #666;
+                opacity: 0.6;
+                transition: color 0.3s;
+                cursor: pointer;
+                font-size: 12px;
+                user-select: none;
+
+                &:hover {
+                    opacity: 1;
                 }
             }
-            &.selected {
-                background-color: $theme;
-                color: #fff;
-                font-weight: bold;
-            }
-            &.disabled {
-                cursor: not-allowed;
+        }
+
+        .calendar-wrapper {
+            width: 100%;
+            padding: 0 0.8em;
+            table-layout: fixed;
+
+            .calendar-cell {
+                cursor: pointer;
+                user-select: none;
+                font-size: 14px;
+                border-radius: 50%;
+                width: 2em;
+                height: 2em;
+                line-height: 2;
+                margin-left: 0.5em;
+
+                &.prev-date,
+                &.next-date {
+                    color: #ddd;
+                }
+
+                &.cur-date {
+                    &:not(.selected):hover {
+                        background-color: rgba($theme, 0.1);
+                    }
+                }
+
+                &.selected {
+                    background-color: $theme;
+                    color: #fff;
+                    font-weight: bold;
+                }
+
+                &.disabled {
+                    cursor: not-allowed;
+                }
             }
         }
-    }
-    .action-wrapper {
-        padding: 0.4em 1em;
-        cursor: pointer;
-        > span.action-wrapper-text {
-            color: rgba($theme, 0.8);
-            &:hover {
-                color: $theme;
+
+        .action-wrapper {
+            padding: 0.4em 1em;
+            cursor: pointer;
+
+            >span.action-wrapper-text {
+                color: rgba($theme, 0.8);
+
+                &:hover {
+                    color: $theme;
+                }
             }
         }
+
+        p {
+            margin: 0;
+        }
+
+        hr {
+            background: #ddd;
+            height: 1px;
+            border: none;
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
     }
-    p {
-        margin: 0;
-    }
-    hr {
-        background: #ddd;
-        height: 1px;
-        border: none;
-        margin-top: 4px;
-        margin-bottom: 4px;
-    }
+
 }

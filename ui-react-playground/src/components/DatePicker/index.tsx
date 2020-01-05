@@ -1,6 +1,8 @@
-import React, {useState, useEffect} from 'react';
-import './index.scss';
+import React, { useState, useEffect } from 'react';
 import moment from 'moment';
+
+import './index.scss';
+import Calendar, { DEFAULT_FORMAT, DateType, IProps as ICalendar } from './components/Calendar';
 import { classNames } from '../utils';
 
 const IconWrapper = (props) => {
@@ -13,19 +15,16 @@ const IconWrapper = (props) => {
     )
 };
 
-const defaultCalendarHeader = ['一', '二', '三', '四', '五', '六', '日'];
-const SHOW_ROW = 6;
-const SHOW_COL = 7;
-const DEFAULT_FORMAT = 'YYYY-MM-DD';
+interface IPicker {
+    visible: boolean;
+    inputValue?: string;
+    setInputValue: (inputValue: string) => void;
+    hidePicker: (e) => void;
+}
 
-const DatePicker: React.FC = () => {
+const Picker: React.FC<IPicker> = ({ visible, inputValue, setInputValue, hidePicker }) => {
     const [curDate, setCurDate] = useState(new Date);
     const [rangeDate, setRangeDate] = useState(new Date);
-    const [matrix, setMatrix] = useState(makeDateMatrix(rangeDate));
-
-    useEffect(() => {
-        setMatrix(makeDateMatrix(rangeDate));
-    }, [rangeDate]);
 
     const handleChangeDate = (direction: DateType.prev | DateType.next, type: 'months' | 'years') => () => {
         const next = direction === DateType.prev
@@ -35,24 +34,48 @@ const DatePicker: React.FC = () => {
     };
 
     const handleInputChange = (e) => {
-        let v = e.target.value;
+        let v = e.target.value.trim();
+        const setter = (inputValue: string) => {
+            const v = moment(inputValue || new Date);
+            setCurDate(v.toDate());
+            setRangeDate(v.toDate());
+            setInputValue(inputValue);
+        };
+
+        if (!v) return setter(v);
         if (v.length !== DEFAULT_FORMAT.length) return;
         if (moment(v).format(DEFAULT_FORMAT) !== v) return;
 
-        v = moment(v);
-        setCurDate(v.toDate());
-        setRangeDate(v.toDate());
+        return setter(v);
     }
 
+    const handleCellClick: ICalendar['handleCellClick'] = (dateItem, e) => {
+        setRangeDate(dateItem.value);
+        setCurDate(dateItem.value);
+        setInputValue(moment(dateItem.value).format(DEFAULT_FORMAT));
+        hidePicker(e);
+    };
+
+    const handleFooterClick = handleCellClick.bind(null, {status: DateType.cur, value: new Date});
+
+    const stopEventPropagation = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+    };
+
+    if (!visible) return null;
 
     return (
-        <div className={'react-datepicker-wrapper'}>
-            <div className="datepicker-edit-input-wrapper">
+        <div className={classNames('react-datepicker-content', { [`react-datepicker-content-show`]: visible })} onClick={stopEventPropagation}>
+            <div className='datepicker-edit-input-wrapper'>
                 <input
+                    defaultValue={inputValue}
+                    autoFocus
                     className={'datepicker-edit-input'}
                     type="text"
                     placeholder={'请选择日期'}
-                    onChange={handleInputChange}/>
+                    onChange={handleInputChange}
+                />
             </div>
             <hr />
             <header className={'select-header'}>
@@ -68,106 +91,55 @@ const DatePicker: React.FC = () => {
                 </IconWrapper>
             </header>
             <hr />
-            <table className={'calendar-wrapper'}>
-                <thead>
-                    <tr className={classNames('calendar-row')}>
-                        {defaultCalendarHeader.map(h => (
-                            <th key={h}>
-                                <p
-                                    className={classNames('calendar-head', 'calendar-cell')}>
-                                    {h}
-                                </p>
-
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {chunk(matrix).map((tr, i) => (
-                        <tr className={classNames('calendar-row')} key={i}>{
-                            tr.map((td) => (
-                                <td
-                                    onClick={() => {
-                                        [DateType.prev, DateType.next].some(t => t === td.status) && setRangeDate(td.value);
-                                        setCurDate(td.value)
-                                    }}
-                                    key={String(td.value)}>
-                                    <p
-                                        className={classNames('calendar-cell', td.status, { today: dateEqual(td.value, new Date), selected: dateEqual(td.value, curDate)})}>
-                                        {td.value.getDate()}
-                                    </p>
-                                </td>
-                            ))
-                        }</tr>)
-                    )}
-                </tbody>
-
-            </table>
+            <Calendar
+                curDate={curDate}
+                rangeDate={rangeDate}
+                handleCellClick={handleCellClick} />
             <hr />
-            <footer className={'action-wrapper'} onClick={() => {setCurDate(new Date);setRangeDate(new Date);}}><span className={'action-wrapper-text'}>今天</span></footer>
+            <footer
+                className={'action-wrapper'}
+                onClick={handleFooterClick}>
+                    <span className={'action-wrapper-text'}>今天</span>
+            </footer>
         </div>
     );
 }
 
-enum DateType {
-    prev = 'prev-date',
-    cur = 'cur-date',
-    next = 'next-date',
-}
-type DateItem = {
-    status: DateType,
-    value: Date,
-}
+const DatePicker: React.FC<{ value?: string, placeholder?: string }> = ({value, placeholder}) => {
+    const [visible, setVisible] = useState(false);
+    const [inputValue, setInputValue] = useState('');
+    const ref = React.useRef(null);
+    const hidePicker = (e) => {
+        if (ref && ref.current === e.target) return;
+        setVisible(false);
+    };
 
-/**
- * @description 生成日期矩阵
- */
-const makeDateMatrix = (currentDate: Date = new Date): DateItem[] => {
-    const month = currentDate.getMonth();
-    const year = currentDate.getFullYear();
-    const firstDayInMonth = moment(`${year}-${month + 1}-01`).toDate();
-    const lastDayInMonth = moment(firstDayInMonth).add(1, 'months').subtract(1, 'days').toDate();
-    let currentDays = lastDayInMonth.getDate();
-    let prevLength = !firstDayInMonth.getDay() ? 6 : (firstDayInMonth.getDay() - 1);
-    let nextLength = SHOW_ROW * SHOW_COL - prevLength - currentDays;
+    useEffect(() => {
+        window.addEventListener('click', hidePicker);
+        return () => window.removeEventListener('click', hidePicker);
+    });
 
-    const result = [];
-    for (let i = 1; i <= prevLength; i++) {
-        result.unshift({
-            status: DateType.prev,
-            value: moment(firstDayInMonth).subtract(i, 'days').toDate()
-        })
-    }
-    for (let i = 0; i < currentDays; i++) {
-        result.push({
-            status: DateType.cur,
-            value: moment(firstDayInMonth).add(i, 'days').toDate(),
-        });
-    }
-    for (let i = 1; i <= nextLength; i++) {
-        result.push({
-            status: DateType.next,
-            value: moment(lastDayInMonth).add(i, 'days').toDate()
-        });
-    }
+    return (
+        <div className={'react-datepicker-wrapper'}>
+            <input
+                ref={ref}
+                className={'react-datepicker-input'}
+                type="text"
+                value={inputValue}
+                readOnly
+                onClick={() => setVisible(true)}
+                placeholder={placeholder || '请选择日期'}
+            />
+            <div>
+                <Picker
+                    visible={visible}
+                    setInputValue={setInputValue}
+                    inputValue={inputValue}
+                    hidePicker={hidePicker}
+                /></div>
 
-    return result;
-}
-
-/**
- * @description 数组分块
- */
-function chunk<T>(arr: T[], chunkSize = SHOW_COL): T[][] {
-    let times = (arr.length / chunkSize) | 1;
-    const result = [];
-    for (let i = 0; i <= times; i++) {
-        result.push(arr.slice(i * chunkSize, (i + 1) * chunkSize));
-    }
-    return result;
-}
-
-function dateEqual(a: Date, b: Date) {
-    return moment(a).format(DEFAULT_FORMAT) === moment(b).format(DEFAULT_FORMAT)
+        </div>
+    )
 }
 
 export default DatePicker;
