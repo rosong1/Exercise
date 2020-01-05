@@ -5,7 +5,7 @@ import './index.scss';
 import Calendar, { DEFAULT_FORMAT, DateType, IProps as ICalendar } from './components/Calendar';
 import { classNames } from '../utils';
 
-const IconWrapper = (props) => {
+const IconWrapper: React.FC<{left: React.ReactNode; right: React.ReactNode}> = (props) => {
     return (
         <>
             {props.left}
@@ -16,15 +16,14 @@ const IconWrapper = (props) => {
 };
 
 interface IPicker {
-    visible: boolean;
     inputValue?: string;
-    setInputValue: (inputValue: string) => void;
+    setInputValue: (inputValue: string, valueForMoment: moment.Moment) => void;
     hidePicker: (e) => void;
 }
 
-const Picker: React.FC<IPicker> = ({ visible, inputValue, setInputValue, hidePicker }) => {
-    const [curDate, setCurDate] = useState(new Date);
-    const [rangeDate, setRangeDate] = useState(new Date);
+const Picker: React.FC<IPicker> = ({inputValue, setInputValue, hidePicker }) => {
+    const [curDate, setCurDate] = useState(inputValue ? new Date(inputValue) : new Date);
+    const [rangeDate, setRangeDate] = useState(inputValue ? new Date(inputValue) : new Date);
 
     const handleChangeDate = (direction: DateType.prev | DateType.next, type: 'months' | 'years') => () => {
         const next = direction === DateType.prev
@@ -39,7 +38,7 @@ const Picker: React.FC<IPicker> = ({ visible, inputValue, setInputValue, hidePic
             const v = moment(inputValue || new Date);
             setCurDate(v.toDate());
             setRangeDate(v.toDate());
-            setInputValue(inputValue);
+            setInputValue(inputValue, v);
         };
 
         if (!v) return setter(v);
@@ -47,12 +46,12 @@ const Picker: React.FC<IPicker> = ({ visible, inputValue, setInputValue, hidePic
         if (moment(v).format(DEFAULT_FORMAT) !== v) return;
 
         return setter(v);
-    }
+    };
 
     const handleCellClick: ICalendar['handleCellClick'] = (dateItem, e) => {
         setRangeDate(dateItem.value);
         setCurDate(dateItem.value);
-        setInputValue(moment(dateItem.value).format(DEFAULT_FORMAT));
+        setInputValue(moment(dateItem.value).format(DEFAULT_FORMAT), moment(dateItem.value));
         hidePicker(e);
     };
 
@@ -63,10 +62,8 @@ const Picker: React.FC<IPicker> = ({ visible, inputValue, setInputValue, hidePic
         e.preventDefault();
     };
 
-    if (!visible) return null;
-
     return (
-        <div className={classNames('react-datepicker-content', { [`react-datepicker-content-show`]: visible })} onClick={stopEventPropagation}>
+        <div className={classNames('react-datepicker-content')} onClick={stopEventPropagation}>
             <div className='datepicker-edit-input-wrapper'>
                 <input
                     defaultValue={inputValue}
@@ -105,9 +102,15 @@ const Picker: React.FC<IPicker> = ({ visible, inputValue, setInputValue, hidePic
     );
 }
 
-const DatePicker: React.FC<{ value?: string, placeholder?: string }> = ({value, placeholder}) => {
+const DatePicker: React.FC<{ value?: string; placeholder?: string; onDateChange?: (date: string, dateForMoment: moment.Moment) => any }> = ({value, placeholder, onDateChange}) => {
     const [visible, setVisible] = useState(false);
-    const [inputValue, setInputValue] = useState('');
+    const [inputValue, setInputValue] = useState(value || '');
+
+    const _setInputValue = (date: string, dateForMoment: moment.Moment) => {
+        setInputValue(date);
+        typeof onDateChange === 'function' && onDateChange(date, dateForMoment);
+    };
+
     const ref = React.useRef(null);
     const hidePicker = (e) => {
         if (ref && ref.current === e.target) return;
@@ -125,18 +128,18 @@ const DatePicker: React.FC<{ value?: string, placeholder?: string }> = ({value, 
                 ref={ref}
                 className={'react-datepicker-input'}
                 type="text"
-                value={inputValue}
+                value={value || inputValue}
                 readOnly
                 onClick={() => setVisible(true)}
                 placeholder={placeholder || '请选择日期'}
             />
             <div>
-                <Picker
-                    visible={visible}
-                    setInputValue={setInputValue}
-                    inputValue={inputValue}
+                {visible && <Picker
+                    setInputValue={_setInputValue}
+                    inputValue={value || inputValue}
                     hidePicker={hidePicker}
-                /></div>
+                />}
+            </div>
 
         </div>
     )

@@ -24,9 +24,10 @@ $theme: #1890ff;
         position: absolute;
         border-radius: 4px;
         box-shadow: 0 2px 8px #999;
-        // margin-top: -1.5em;
         background-color: #fff;
         top: 0;
+        left: 0;
+        z-index: 1;
         .datepicker-edit-input-wrapper {
             .datepicker-edit-input {
                 border-radius: 4px;
@@ -81,6 +82,10 @@ $theme: #1890ff;
                     &:not(.selected):hover {
                         background-color: rgba($theme, 0.1);
                     }
+                }
+
+                &.today {
+                    background-color: rgba($theme, 0.2);
                 }
 
                 &.selected {
